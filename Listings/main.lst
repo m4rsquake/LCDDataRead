@@ -1,0 +1,137 @@
+C51 COMPILER V9.59.0.0   MAIN                                                              12/08/2023 16:39:14 PAGE 1   
+
+
+C51 COMPILER V9.59.0.0, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN .\Objects\main.obj
+COMPILER INVOKED BY: D:\Keil\C51\BIN\C51.EXE main.c LARGE OMF2 OPTIMIZE(8,SPEED) BROWSE INCDIR(.\LIB) DEBUG PRINT(.\List
+                    -ings\main.lst) TABS(2) OBJECT(.\Objects\main.obj)
+
+line level    source
+
+   1          #include    "stc8a8k64d4.h"
+   2          #include    "string.h"
+   3          /****************** 库函数头文件 *******************/
+   4          #include    "config.h"
+*** WARNING C317 IN LINE 38 OF \LCDDataRead\LIB\type_def.h: attempt to redefine macro 'NULL'
+   5          #include    "STC8A_GPIO.h"
+   6          #include  "STC8A_Delay.h"
+   7          /**************** 用户函数头文件 *******************/
+   8          #include    "oled.h"
+   9          #include    "timer.h"
+  10          #include    "ADC.h"    
+  11          #include    "uart.h"
+  12          /********************* 变量定义 *******************/
+  13          u8 xdata FlagOfCOM1 = 0;
+  14          u8 xdata FinishOfADC = 1;
+  15          u8 COMCnt = 0;
+  16          
+  17          u16 ADCValue[10] = {0};
+  18          u8 xdata FlagOfGroup = 0;
+  19          u16 xdata ADCValueCOM1[9] = {0};
+  20          u16 xdata ADCValueCOM2[9] = {0};
+  21          u16 xdata ADCValueCOM3[9] = {0};
+  22          
+  23          extern u16 Timer0_Count;
+  24          /*
+  25              高电平持续时间约8.7ms
+  26              在这段时间内完成9个通道的测量
+  27              假设9个通道的测量在4ms内完成
+  28              则ADC频率要达到2250Hz
+  29          */
+  30          
+  31          /******************* IO配置函数 *******************/
+  32          void  GPIO_config(void)
+  33          {
+  34   1          //OLED IO初始化 P5.4 P5.5设置为准双向口
+  35   1          P5_MODE_IO_PU(GPIO_Pin_4);      
+  36   1          P5_MODE_IO_PU(GPIO_Pin_5);
+  37   1          
+  38   1          //ADC IO初始化
+  39   1        P0_MODE_IN_HIZ(GPIO_Pin_LOW | GPIO_Pin_4 | GPIO_Pin_5 | GPIO_Pin_6);    //P0.0~P0.6 设置为高阻输入
+  40   1        P1_MODE_IN_HIZ(GPIO_Pin_All);   //P1.0~P1.7 设置为高阻输入
+  41   1        P3_MODE_IO_PU(GPIO_Pin_0 | GPIO_Pin_1); //P3.0,P3.1 设置为准双向口
+  42   1      }
+  43          
+  44          void main()
+  45          {
+  46   1      //    AUXR &= !EXTRAM;        //允许访问内部XRAM
+  47   1          EAXSFR();       //使用XSFR
+  48   1          
+  49   1          //初始化代码
+  50   1          
+  51   1          ADC_config();           //初始化ADC
+  52   1          delay_ms(20);
+  53   1          
+C51 COMPILER V9.59.0.0   MAIN                                                              12/08/2023 16:39:14 PAGE 2   
+
+  54   1          UART_config();          //初始化串口
+  55   1          Timer_config();         //初始化定时器
+  56   1          //开启总中断
+  57   1          EA = 1;
+  58   1          
+  59   1          //初始化OLED
+  60   1          OLED_Init();      
+  61   1          OLED_Clear();
+  62   1      
+  63   1          ADC_CONTR = (ADC_CONTR & 0xf0) | ADC_START | 0;     //通道0            
+  64   1      
+  65   1          while(1)
+  66   1          {
+  67   2              u8 i;
+  68   2      
+  69   2      //        printf("%d,%d,%d,%d,%d,%d,%d\n", ADCValueCOM2[0],ADCValueCOM2[1],ADCValueCOM2[2],ADCValueCOM2[3]
+             -,ADCValueCOM2[4],ADCValueCOM2[5],ADCValueCOM2[6]);
+  70   2       
+  71   2              /*
+  72   2                  if 检测到COM1高
+  73   2                  then Timer0_Run(n)
+  74   2                  else 持续检测COM1
+  75   2              */
+  76   2      //        printf("%d\n",ADCValue[0]);
+  77   2      //        if(ADCValue[0] > 1000)
+  78   2      //        {
+  79   2      //            PrintString1("1\n");
+  80   2      //            FlagOfCOM1 = 1;
+  81   2      //        }else
+  82   2      //        {
+  83   2      //            PrintString1("0\n");
+  84   2      
+  85   2      //        }
+  86   2              //转换完成后进行数据转移
+  87   2      //        if(FinishOfADC)
+  88   2      //        {
+  89   2      //            if(Timer0_Count > 194)
+  90   2      //            {
+  91   2      //                memcpy(ADCValueCOM3, &ADCValue[1], 9);
+  92   2      //            }else if(Timer0_Count > 107)
+  93   2      //            {
+  94   2      //                memcpy(ADCValueCOM2, &ADCValue[1], 9);
+  95   2      //            }else if(Timer0_Count > 20)
+  96   2      //            {
+  97   2      //                memcpy(ADCValueCOM1, &ADCValue[1], 9);
+  98   2      //            }
+  99   2      //        }
+ 100   2      
+ 101   2          }
+ 102   1      }
+*** WARNING C280 IN LINE 67 OF main.c: 'i': unreferenced local variable
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =     68    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =     78       1
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+C51 COMPILER V9.59.0.0   MAIN                                                              12/08/2023 16:39:14 PAGE 3   
+
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  2 WARNING(S),  0 ERROR(S)

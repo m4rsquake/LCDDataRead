@@ -1,0 +1,247 @@
+C51 COMPILER V9.59.0.0   STC8A_DMA_ISR                                                     12/08/2023 16:39:16 PAGE 1   
+
+
+C51 COMPILER V9.59.0.0, COMPILATION OF MODULE STC8A_DMA_ISR
+OBJECT MODULE PLACED IN .\Objects\STC8A_DMA_Isr.obj
+COMPILER INVOKED BY: D:\Keil\C51\BIN\C51.EXE LIB\STC8A_DMA_Isr.c LARGE OMF2 OPTIMIZE(8,SPEED) BROWSE INCDIR(.\LIB) DEBUG
+                    - PRINT(.\Listings\STC8A_DMA_Isr.lst) TABS(2) OBJECT(.\Objects\STC8A_DMA_Isr.obj)
+
+line level    source
+
+   1          /*---------------------------------------------------------------------*/
+   2          /* --- STC MCU Limited ------------------------------------------------*/
+   3          /* --- STC 1T Series MCU Demo Programme -------------------------------*/
+   4          /* --- Mobile: (86)13922805190 ----------------------------------------*/
+   5          /* --- Fax: 86-0513-55012956,55012947,55012969 ------------------------*/
+   6          /* --- Tel: 86-0513-55012928,55012929,55012966 ------------------------*/
+   7          /* --- Web: www.STCAI.com ---------------------------------------------*/
+   8          /* --- BBS: www.STCAIMCU.com  -----------------------------------------*/
+   9          /* --- QQ:  800003751 -------------------------------------------------*/
+  10          /* 如果要在程序中使用此代码,请在程序中注明使用了STC的资料及程序            */
+  11          /*---------------------------------------------------------------------*/
+  12          
+  13          #include "STC8A_DMA.h"
+  14          #include "STC8A_SPI.h"
+  15          #include "STC8A_LCM.h"
+  16          
+  17          bit DmaTx1Flag;
+  18          bit DmaRx1Flag;
+  19          bit DmaTx2Flag;
+  20          bit DmaRx2Flag;
+  21          bit DmaTx3Flag;
+  22          bit DmaRx3Flag;
+  23          bit DmaTx4Flag;
+  24          bit DmaRx4Flag;
+  25          
+  26          u16 LCM_Cnt;
+  27          bit LcmFlag;
+  28          bit DmaLcmFlag;
+  29          
+  30          bit DmaADCFlag = 0;
+  31          bit DmaM2MFlag = 0;
+  32          bit DmaI2CTFlag=0;
+  33          bit DmaI2CRFlag=0;
+  34          
+  35          bit SpiTxFlag;
+  36          bit SpiRxFlag;
+  37          
+  38          bit u2sFlag;    //UART to SPI
+  39          bit s2uFlag;    //SPI to UART
+  40          
+  41          bit SpiSendFlag;
+  42          bit UartSendFlag;
+  43          
+  44          //========================================================================
+  45          // 函数: DMA_ISR_Handler
+  46          // 描述: DMA中断函数.
+  47          // 参数: none.
+  48          // 返回: none.
+  49          // 版本: V1.0, 2021-05-25
+  50          //========================================================================
+  51          void DMA_ISR_Handler (void) interrupt 13
+  52          {
+  53   1        // TODO: 在此处添加用户代码
+  54   1        
+C51 COMPILER V9.59.0.0   STC8A_DMA_ISR                                                     12/08/2023 16:39:16 PAGE 2   
+
+  55   1        //----------- DMA ADC --------------
+  56   1        if(DMA_ADC_STA & 0x01)  //AD转换完成
+  57   1        {
+  58   2          DMA_ADC_STA &= ~0x01; //清标志位
+  59   2          DmaADCFlag = 1;
+  60   2        }
+  61   1      
+  62   1        //----------- DMA M2M --------------
+  63   1        if(DMA_M2M_STA & 0x01)  //M2M传输完成
+  64   1        {
+  65   2          DMA_M2M_STA &= ~0x01; //清标志位
+  66   2          DmaM2MFlag = 1;
+  67   2          if(u2sFlag)
+  68   2          {
+  69   3            u2sFlag = 0;
+  70   3            SpiSendFlag = 1;
+  71   3          }
+  72   2          if(s2uFlag)
+  73   2          {
+  74   3            s2uFlag = 0;
+  75   3            UartSendFlag = 1;
+  76   3          }
+  77   2        }
+  78   1      
+  79   1        //---------- DMA UART1 -------------
+  80   1        if (DMA_UR1T_STA & 0x01)  //发送完成
+  81   1        {
+  82   2          DMA_UR1T_STA &= ~0x01;  //清标志位
+  83   2          DmaTx1Flag = 1;
+  84   2        }
+  85   1        if (DMA_UR1T_STA & 0x04)  //数据覆盖
+  86   1        {
+  87   2          DMA_UR1T_STA &= ~0x04;  //清标志位
+  88   2        }
+  89   1        
+  90   1        if (DMA_UR1R_STA & 0x01)  //接收完成
+  91   1        {
+  92   2          DMA_UR1R_STA &= ~0x01;  //清标志位
+  93   2          DmaRx1Flag = 1;
+  94   2        }
+  95   1        if (DMA_UR1R_STA & 0x02)  //数据丢弃
+  96   1        {
+  97   2          DMA_UR1R_STA &= ~0x02;  //清标志位
+  98   2        }
+  99   1        //---------- DMA UART2 -------------
+ 100   1        if (DMA_UR2T_STA & 0x01)  //发送完成
+ 101   1        {
+ 102   2          DMA_UR2T_STA &= ~0x01;  //清标志位
+ 103   2          DmaTx2Flag = 1;
+ 104   2        }
+ 105   1        if (DMA_UR2T_STA & 0x04)  //数据覆盖
+ 106   1        {
+ 107   2          DMA_UR2T_STA &= ~0x04;  //清标志位
+ 108   2        }
+ 109   1        
+ 110   1        if (DMA_UR2R_STA & 0x01)  //接收完成
+ 111   1        {
+ 112   2          DMA_UR2R_STA &= ~0x01;  //清标志位
+ 113   2          DmaRx2Flag = 1;
+ 114   2        }
+ 115   1        if (DMA_UR2R_STA & 0x02)  //数据丢弃
+ 116   1        {
+C51 COMPILER V9.59.0.0   STC8A_DMA_ISR                                                     12/08/2023 16:39:16 PAGE 3   
+
+ 117   2          DMA_UR2R_STA &= ~0x02;  //清标志位
+ 118   2        }
+ 119   1        //---------- DMA UART3 -------------
+ 120   1        if (DMA_UR3T_STA & 0x01)  //发送完成
+ 121   1        {
+ 122   2          DMA_UR3T_STA &= ~0x01;  //清标志位
+ 123   2          DmaTx3Flag = 1;
+ 124   2        }
+ 125   1        if (DMA_UR3T_STA & 0x04)  //数据覆盖
+ 126   1        {
+ 127   2          DMA_UR3T_STA &= ~0x04;  //清标志位
+ 128   2        }
+ 129   1        
+ 130   1        if (DMA_UR3R_STA & 0x01)  //接收完成
+ 131   1        {
+ 132   2          DMA_UR3R_STA &= ~0x01;  //清标志位
+ 133   2          DmaRx3Flag = 1;
+ 134   2        }
+ 135   1        if (DMA_UR3R_STA & 0x02)  //数据丢弃
+ 136   1        {
+ 137   2          DMA_UR3R_STA &= ~0x02;  //清标志位
+ 138   2        }
+ 139   1        //---------- DMA UART4 -------------
+ 140   1        if (DMA_UR4T_STA & 0x01)  //发送完成
+ 141   1        {
+ 142   2          DMA_UR4T_STA &= ~0x01;  //清标志位
+ 143   2          DmaTx4Flag = 1;
+ 144   2        }
+ 145   1        if (DMA_UR4T_STA & 0x04)  //数据覆盖
+ 146   1        {
+ 147   2          DMA_UR4T_STA &= ~0x04;  //清标志位
+ 148   2        }
+ 149   1        
+ 150   1        if (DMA_UR4R_STA & 0x01)  //接收完成
+ 151   1        {
+ 152   2          DMA_UR4R_STA &= ~0x01;  //清标志位
+ 153   2          DmaRx4Flag = 1;
+ 154   2        }
+ 155   1        if (DMA_UR4R_STA & 0x02)  //数据丢弃
+ 156   1        {
+ 157   2          DMA_UR4R_STA &= ~0x02;  //清标志位
+ 158   2        }
+ 159   1      
+ 160   1        //---------- DMA SPI -------------
+ 161   1        if(DMA_SPI_STA & 0x01)  //通信完成
+ 162   1        {
+ 163   2          DMA_SPI_STA &= ~0x01; //清标志位
+ 164   2          if(SPCTL & 0x10) 
+ 165   2          { //主机模式
+ 166   3            SpiTxFlag = 1;
+ 167   3            SPI_SS_2 = 1;
+ 168   3          }
+ 169   2          else 
+ 170   2          { //从机模式
+ 171   3            SpiRxFlag = 1;
+ 172   3          }
+ 173   2        }
+ 174   1        if(DMA_SPI_STA & 0x02)  //数据丢弃
+ 175   1        {
+ 176   2          DMA_SPI_STA &= ~0x02; //清标志位
+ 177   2        }
+ 178   1        if(DMA_SPI_STA & 0x04)  //数据覆盖
+C51 COMPILER V9.59.0.0   STC8A_DMA_ISR                                                     12/08/2023 16:39:16 PAGE 4   
+
+ 179   1        {
+ 180   2          DMA_SPI_STA &= ~0x04; //清标志位
+ 181   2        }
+ 182   1      
+ 183   1        //------------- LCM --------------
+ 184   1        if(LCMIFSTA & 0x01)
+ 185   1        {
+ 186   2          LCMIFSTA = 0x00;
+ 187   2          LcmFlag = 0;
+ 188   2        }
+ 189   1        
+ 190   1        //---------- DMA LCM -------------
+ 191   1        if(DMA_LCM_STA & 0x01)
+ 192   1        {
+ 193   2          if(DmaLcmFlag)
+ 194   2          {
+ 195   3            DmaLcmFlag = 0;
+ 196   3            DMA_LCM_CR = 0;
+ 197   3          }
+ 198   2          else
+ 199   2          {
+ 200   3            LCM_Cnt--;
+ 201   3            if(LCM_Cnt == 0)
+ 202   3            {
+ 203   4              DMA_LCM_CR = 0;
+ 204   4              LCD_CS=1;
+ 205   4            }
+ 206   3            else
+ 207   3            {
+ 208   4              DMA_LCM_CR = 0xa0;  //Write dat
+ 209   4            }
+ 210   3          }
+ 211   2          DMA_LCM_STA = 0;    //清标志位
+ 212   2        }
+ 213   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    365    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =      2    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =     20    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

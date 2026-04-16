@@ -1,0 +1,66 @@
+C51 COMPILER V9.59.0.0   STC8A_LCM                                                         12/08/2023 16:39:16 PAGE 1   
+
+
+C51 COMPILER V9.59.0.0, COMPILATION OF MODULE STC8A_LCM
+OBJECT MODULE PLACED IN .\Objects\STC8A_LCM.obj
+COMPILER INVOKED BY: D:\Keil\C51\BIN\C51.EXE LIB\STC8A_LCM.c LARGE OMF2 OPTIMIZE(8,SPEED) BROWSE INCDIR(.\LIB) DEBUG PRI
+                    -NT(.\Listings\STC8A_LCM.lst) TABS(2) OBJECT(.\Objects\STC8A_LCM.obj)
+
+line level    source
+
+   1          /*---------------------------------------------------------------------*/
+   2          /* --- STC MCU Limited ------------------------------------------------*/
+   3          /* --- STC 1T Series MCU Demo Programme -------------------------------*/
+   4          /* --- Mobile: (86)13922805190 ----------------------------------------*/
+   5          /* --- Fax: 86-0513-55012956,55012947,55012969 ------------------------*/
+   6          /* --- Tel: 86-0513-55012928,55012929,55012966 ------------------------*/
+   7          /* --- Web: www.STCAI.com ---------------------------------------------*/
+   8          /* --- BBS: www.STCAIMCU.com  -----------------------------------------*/
+   9          /* --- QQ:  800003751 -------------------------------------------------*/
+  10          /* Èç¹ûÒªÔÚ³ÌÐòÖÐÊ¹ÓÃ´Ë´úÂë,ÇëÔÚ³ÌÐòÖÐ×¢Ã÷Ê¹ÓÃÁËSTCµÄ×ÊÁÏ¼°³ÌÐò            */
+  11          /*---------------------------------------------------------------------*/
+  12          
+  13          #include "STC8A_LCM.h"
+  14          
+  15          //========================================================================
+  16          // º¯Êý: void LCM_Inilize(LCM_InitTypeDef *LCM)
+  17          // ÃèÊö: LCM ³õÊ¼»¯³ÌÐò.
+  18          // ²ÎÊý: LCM: ½á¹¹²ÎÊý,Çë²Î¿¼LCM.hÀïµÄ¶¨Òå.
+  19          // ·µ»Ø: none.
+  20          // °æ±¾: V1.0, 2021-06-02
+  21          //========================================================================
+  22          void LCM_Inilize(LCM_InitTypeDef *LCM)
+  23          {
+  24   1        LCMIFSTA = 0x00;
+  25   1        if(LCM->LCM_Mode == MODE_M6800)   LCMIFCFG |= MODE_M6800; //LCM½Ó¿ÚÄ£Ê½£ºM6800
+  26   1        else LCMIFCFG &= ~MODE_M6800; //LCM½Ó¿ÚÄ£Ê½£ºI8080
+  27   1        
+  28   1        if(LCM->LCM_Bit_Wide == BIT_WIDE_16)    LCMIFCFG |= BIT_WIDE_16;  //LCMÊý¾Ý¿í¶È£º16Î»
+  29   1        else LCMIFCFG &= ~BIT_WIDE_16;  //LCMÊý¾Ý¿í¶È£º8Î»
+  30   1        
+  31   1        if(LCM->LCM_Setup_Time <= 7) LCMIFCFG2 = (LCMIFCFG2 & ~0x1c) | (LCM->LCM_Setup_Time << 2);  //LCMÍ¨ÐÅÊý¾Ý½
+             -¨Á¢Ê±¼ä£º0~7
+  32   1        if(LCM->LCM_Hold_Time <= 3) LCMIFCFG2 = (LCMIFCFG2 & ~0x03) | LCM->LCM_Hold_Time; //LCMÍ¨ÐÅÊý¾Ý½¨Á¢Ê±¼ä£º
+             -0~7
+  33   1        
+  34   1        if(LCM->LCM_Enable == ENABLE)   LCMIFCR |= 0x80;  //Ê¹ÄÜLCM½Ó¿Ú¹¦ÄÜ
+  35   1        else LCMIFCR &= ~0x80;  //½ûÖ¹LCM½Ó¿Ú¹¦ÄÜ
+  36   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    125    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
